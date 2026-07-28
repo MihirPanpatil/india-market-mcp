@@ -1,0 +1,12 @@
+.cache/
+__pycache__/
+*.pyc
+.git/
+.cache/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.mcp-inspector/
