@@ -16,18 +16,50 @@ Built by combining the best features from 5 open-source Indian market MCP server
 | Technicals | 3 | SMA, EMA, RSI, MACD, Bollinger Bands, support/resistance, candlestick |
 | Additional | 9 | ETFs, commodities, currencies, sovereign gold bonds, stock screener |
 
-## Install
+## Quick Start
+
+### Option 1: Docker (Recommended)
 
 ```bash
-cd india-market-mcp
-pip install -e .
+# Build image
+docker build -t india-market-mcp .
+
+# Run server
+docker run -i --rm india-market-mcp
 ```
 
-## Usage
+### Option 2: Python (Local)
 
-### With Claude Desktop / opencode (stdio)
+```bash
+# Clone repo
+git clone https://github.com/icharshal/india-market-mcp.git
+cd india-market-mcp
 
-Add to your MCP config:
+# Install dependencies
+pip install -e .
+
+# Run server
+python -m src.server
+```
+
+## Configuration
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "india-market": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "india-market-mcp"]
+    }
+  }
+}
+```
+
+Or without Docker:
 
 ```json
 {
@@ -35,22 +67,44 @@ Add to your MCP config:
     "india-market": {
       "command": "python",
       "args": ["-m", "src.server"],
-      "cwd": "D:\\Default Project\\nse-mcp-servers\\india-market-mcp"
+      "cwd": "/path/to/india-market-mcp"
     }
   }
 }
 ```
 
-### With opencode (CLI)
+### opencode
+
+Add to `opencode.jsonc`:
+
+```json
+{
+  "mcp": {
+    "india-market": {
+      "type": "local",
+      "command": ["docker", "run", "-i", "--rm", "india-market-mcp"]
+    }
+  }
+}
+```
+
+Or via CLI:
 
 ```bash
-opencode mcp add india-market -- python -m src.server
+opencode mcp add india-market -- docker run -i --rm india-market-mcp
 ```
 
 ### Development / Testing
 
 ```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run with MCP Inspector
 mcp dev src/server.py
+
+# Run tests
+pytest
 ```
 
 ## Tool List
@@ -143,6 +197,47 @@ Results are cached to disk (`.cache/india-market-mcp/`) with TTLs ranging from 3
 
 NSE API calls are rate-limited to 1 request every 350ms with automatic retry on 401/403 responses and session re-initialization.
 
+## Project Structure
+
+```
+india-market-mcp/
+├── Dockerfile              # Docker configuration
+├── pyproject.toml          # Python dependencies
+├── src/
+│   ├── server.py           # Main MCP server entry
+│   ├── modules/
+│   │   ├── stocks.py       # Stock quotes, history, financials
+│   │   ├── derivatives.py  # F&O, options, strategies
+│   │   ├── indices.py      # NSE indices, sectors
+│   │   ├── mutual_funds.py # AMFI schemes, NAV, SIP
+│   │   ├── market.py       # FII/DII, IPOs, deals
+│   │   ├── technicals.py   # RSI, MACD, Bollinger
+│   │   └── additional.py   # ETFs, commodities, currencies
+│   └── utils/
+│       ├── yahoo.py        # Yahoo Finance API
+│       ├── nse.py          # NSE India API
+│       ├── cache.py        # Disk caching
+│       └── math.py         # Black-Scholes, Greeks
+└── .cache/                 # Cache directory (auto-created)
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## Related Projects
+
+- [NSE-MCP](https://github.com/icharshal/NSE-MCP) - TypeScript MCP server for NSE/BSE
+- [india-stock-mcp](https://www.npmjs.com/package/india-stock-mcp) - npm package for Indian stocks
+
 ## License
 
 MIT
+
+## Star History
+
+If you find this useful, please star the repo!
