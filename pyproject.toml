@@ -36,5 +36,10 @@ dev = ["pytest>=8.0.0", "ruff>=0.4.0"]
 [project.scripts]
 india-market-mcp = "src.server:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that use live external market-data endpoints",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

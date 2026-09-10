@@ -1,5 +1,7 @@
 # India Market MCP
 
+> Hermes Agent integration notes: see [`HERMES.md`](HERMES.md) for the local stdio configuration, data-source map, endpoint replacements, test commands, and maintenance checklist.
+
 Comprehensive MCP server for the Indian stock market — **60 tools** covering NSE/BSE, F&O, Mutual Funds, Technicals, ETFs, Commodities, Currencies, Screeners, and more.
 
 Built by combining the best features from 5 open-source Indian market MCP servers. **No API keys required.**

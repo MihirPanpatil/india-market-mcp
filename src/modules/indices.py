@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
-from src.utils.nse import nse_get
-from src.utils.yahoo import get_yf_info, get_yf_history
+from src.utils.nse import nse_get, get_index_constituents_csv
+from src.utils.yahoo import get_yf_info, get_yf_history, get_yahoo_chart_quote
 from src.utils.cache import cached
 from src.utils.math import calculate_sip, calculate_xirr
 import yfinance as yf
@@ -30,12 +30,14 @@ def register(mcp: FastMCP):
     @cached(ttl=60, prefix="idx:constituents")
     async def get_index_constituents(index: str = "NIFTY 50") -> dict:
         """Get all stocks in an index with live prices."""
-        data = await nse_get(f"/api/equity-stockIndices?index={index.upper()}")
+        data = await get_index_constituents_csv(index)
         if not data:
-            return {"error": "Data unavailable"}
+            return {"error": "Index constituents unavailable", "index": index}
         stocks = []
-        for s in data.get("data", []):
-            stocks.append({"symbol": s.get("symbol"), "price": s.get("last"), "change_pct": s.get("pChange"), "volume": s.get("totalTradedVolume"), "52w_high": s.get("meta", {}).get("weekHighLow", {}).get("max"), "52w_low": s.get("meta", {}).get("weekHighLow", {}).get("min")})
+        for s in data:
+            symbol = s.get("Symbol", "")
+            quote = await get_yahoo_chart_quote(symbol) if symbol else {}
+            stocks.append({"symbol": symbol, "name": s.get("Company Name"), "industry": s.get("Industry"), "price": quote.get("currentPrice"), "change_pct": quote.get("regularMarketChangePercent"), "volume": quote.get("volume")})
         return {"index": index, "stocks": stocks, "count": len(stocks)}
 
     @mcp.tool()

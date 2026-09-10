@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
-from src.utils.nse import nse_get
-from src.utils.yahoo import get_yf_info, get_yf_history, get_yf_ticker
+from src.utils.nse import nse_get, get_security_master
+from src.utils.yahoo import get_yf_info, get_yf_history, get_yf_ticker, get_yahoo_chart_quote
 from src.utils.cache import cached
 import pandas as pd
 
@@ -11,7 +11,9 @@ def register(mcp: FastMCP):
     async def get_stock_quote(symbol: str) -> dict:
         """Get live stock quote with price, volume, 52-week range, P/E, market cap."""
         try:
-            info = await get_yf_info(symbol)
+            info = await get_yahoo_chart_quote(symbol)
+            if not info:
+                info = await get_yf_info(symbol)
             return {
                 "symbol": symbol.upper(),
                 "name": info.get("shortName", symbol),
@@ -33,15 +35,17 @@ def register(mcp: FastMCP):
     @mcp.tool()
     @cached(ttl=300, prefix="stock:search")
     async def search_stocks(query: str) -> dict:
-        """Search for stocks by name or symbol on NSE."""
-        data = await nse_get("/api/searchAll")
+        """Search NSE securities using the public security-master CSV."""
+        data = await get_security_master()
         if not data:
-            return {"error": "NSE search unavailable"}
+            return {"error": "NSE security master unavailable"}
+        q = query.strip().upper()
         results = []
-        q = query.upper()
         for item in data:
-            if q in item.get("symbol", "").upper() or q in item.get("name", "").upper():
-                results.append({"symbol": item.get("symbol"), "name": item.get("name"), "series": item.get("meta", {}).get("series")})
+            symbol = item.get("SYMBOL", "")
+            name = item.get("NAME OF COMPANY", "")
+            if q in symbol.upper() or q in name.upper():
+                results.append({"symbol": symbol, "name": name, "series": item.get(" SERIES") or item.get("SERIES")})
                 if len(results) >= 20:
                     break
         return {"results": results, "count": len(results)}
@@ -57,12 +61,18 @@ def register(mcp: FastMCP):
             df = df.tail(100)
             records = []
             for idx, row in df.iterrows():
+                open_price = row["Open"]
+                high = row["High"]
+                low = row["Low"]
+                close = row["Close"]
+                if any(pd.isna(value) for value in (open_price, high, low, close)):
+                    continue
                 records.append({
                     "date": idx.strftime("%Y-%m-%d"),
-                    "open": round(row["Open"], 2),
-                    "high": round(row["High"], 2),
-                    "low": round(row["Low"], 2),
-                    "close": round(row["Close"], 2),
+                    "open": round(open_price, 2),
+                    "high": round(high, 2),
+                    "low": round(low, 2),
+                    "close": round(close, 2),
                     "volume": int(row["Volume"]),
                 })
             return {"symbol": symbol.upper(), "data": records, "count": len(records)}
