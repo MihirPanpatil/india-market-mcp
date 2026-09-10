@@ -41,6 +41,25 @@ uv pip install --python .venv/bin/python -e .
 - Yahoo history: `yfinance.history()`.
 - Mutual funds, derivatives, and other modules may use their own upstream providers; verify those paths independently.
 
+## Reliability behavior and tests
+
+- NSE request failures return structured `error: nse_request_failed` diagnostics; 401/403/429 responses refresh the session before retrying.
+- `classify_market_session()` uses Asia/Kolkata, weekends, optional holiday dates, and NSE hours (09:15–15:30 IST).
+- Transient error payloads are not written to the disk cache. Security-master fetches retain the last successful result and expose stale diagnostics.
+- Technical indicator NaN and infinity values are normalized to JSON `null`; quote fields use Yahoo Chart API and do not fall back to fundamentals.
+
+Run the full suite with:
+
+```bash
+.venv/bin/pytest -q
+```
+
+Run reliability tests with:
+
+```bash
+.venv/bin/pytest -q tests/test_reliability.py
+```
+
 ## Important known constraints
 
 1. Keep NSE `Accept-Encoding` restricted to `gzip, deflate`. Requesting Brotli (`br`) causes compressed responses that this environment does not decode correctly.

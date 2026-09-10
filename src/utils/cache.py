@@ -17,7 +17,9 @@ def cached(ttl: int = 300, prefix: str = ""):
                 if time.time() - ts < ttl:
                     return data
             data = await func(*args, **kwargs)
-            _cache.set(cache_key, (time.time(), data), expire=ttl)
+            # Error responses are transient diagnostics, not cacheable data.
+            if data is not None and not (isinstance(data, dict) and data.get("error")):
+                _cache.set(cache_key, (time.time(), data), expire=ttl)
             return data
         return wrapper
     return decorator

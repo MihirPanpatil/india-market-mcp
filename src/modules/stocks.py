@@ -13,7 +13,7 @@ def register(mcp: FastMCP):
         try:
             info = await get_yahoo_chart_quote(symbol)
             if not info:
-                info = await get_yf_info(symbol)
+                return {"error": "quote_unavailable", "diagnostics": {"provider": "yahoo_chart", "symbol": symbol.upper()}}
             return {
                 "symbol": symbol.upper(),
                 "name": info.get("shortName", symbol),

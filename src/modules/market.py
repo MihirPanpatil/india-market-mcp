@@ -1,4 +1,5 @@
 from mcp.server.fastmcp import FastMCP
+from src.utils import nse
 from src.utils.nse import nse_get
 from src.utils.cache import cached
 
@@ -11,7 +12,7 @@ def register(mcp: FastMCP):
         data = await nse_get("/api/marketStatus")
         if not data:
             return {"error": "Data unavailable"}
-        return {"market_status": data.get("marketState", [])}
+        return {"market_status": data.get("marketState", []), "session": nse.classify_market_session()}
 
     @mcp.tool()
     @cached(ttl=60, prefix="market:fii_dii")

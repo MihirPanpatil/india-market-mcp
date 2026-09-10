@@ -2,6 +2,17 @@ from mcp.server.fastmcp import FastMCP
 from src.utils.yahoo import get_yf_history, compute_sma, compute_ema, compute_rsi, compute_macd, compute_bollinger_bands
 from src.utils.cache import cached
 import asyncio
+import math
+
+
+def _clean_number(value, digits=2):
+    """Return JSON-safe rounded numbers; normalize NaN and infinity to null."""
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return round(value, digits) if math.isfinite(value) else None
+
 
 def register(mcp: FastMCP):
 
@@ -28,18 +39,18 @@ def register(mcp: FastMCP):
             
             return {
                 "symbol": symbol.upper(),
-                "current_price": round(close.iloc[-1], 2),
-                "sma_20": round(sma_20, 2) if sma_20 else None,
-                "sma_50": round(sma_50, 2) if sma_50 else None,
-                "ema_12": round(ema_12, 2) if ema_12 else None,
-                "ema_26": round(ema_26, 2) if ema_26 else None,
-                "rsi_14": round(rsi, 2) if rsi else None,
-                "macd": round(macd_line.iloc[-1], 2) if len(macd_line) > 0 else None,
-                "macd_signal": round(signal_line.iloc[-1], 2) if len(signal_line) > 0 else None,
-                "macd_histogram": round(histogram.iloc[-1], 2) if len(histogram) > 0 else None,
-                "bb_upper": round(bb_upper.iloc[-1], 2) if len(bb_upper) > 0 else None,
-                "bb_middle": round(bb_middle.iloc[-1], 2) if len(bb_middle) > 0 else None,
-                "bb_lower": round(bb_lower.iloc[-1], 2) if len(bb_lower) > 0 else None,
+                "current_price": _clean_number(close.iloc[-1]),
+                "sma_20": _clean_number(sma_20),
+                "sma_50": _clean_number(sma_50),
+                "ema_12": _clean_number(ema_12),
+                "ema_26": _clean_number(ema_26),
+                "rsi_14": _clean_number(rsi),
+                "macd": _clean_number(macd_line.iloc[-1] if len(macd_line) else None),
+                "macd_signal": _clean_number(signal_line.iloc[-1] if len(signal_line) else None),
+                "macd_histogram": _clean_number(histogram.iloc[-1] if len(histogram) else None),
+                "bb_upper": _clean_number(bb_upper.iloc[-1] if len(bb_upper) else None),
+                "bb_middle": _clean_number(bb_middle.iloc[-1] if len(bb_middle) else None),
+                "bb_lower": _clean_number(bb_lower.iloc[-1] if len(bb_lower) else None),
             }
         except Exception as e:
             return {"error": str(e)}
